@@ -6,14 +6,19 @@ from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
+    MessageHandler,
     ContextTypes,
+    filters,
 )
 
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL = "@Game_Station_1"
 
+# بعداً file_id فایل APK را اینجا از Environment Variable می‌گیریم
+APK_FILE_ID = os.getenv("APK_FILE_ID")
+
 # -------------------------
-# پورت برای Render
+# پورت Render
 # -------------------------
 
 web = Flask(__name__)
@@ -28,7 +33,7 @@ def run_web():
 
 
 # -------------------------
-# دستور /start
+# /start
 # -------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -57,6 +62,40 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------------------------
+# دریافت APK
+# -------------------------
+
+async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    document = update.message.document
+
+    if not document:
+        return
+
+    filename = document.file_name or ""
+
+    if filename.lower().endswith(".apk"):
+
+        file_id = document.file_id
+
+        print("\n==============================")
+        print("APK RECEIVED")
+        print("FILE NAME:", filename)
+        print("FILE ID:", file_id)
+        print("==============================\n")
+
+        await update.message.reply_text(
+            "✅ فایل APK دریافت شد.\n\n"
+            "File ID در Logs ربات نمایش داده شد."
+        )
+
+    else:
+        await update.message.reply_text(
+            "❌ لطفاً فقط فایل APK ارسال کن."
+        )
+
+
+# -------------------------
 # بررسی عضویت
 # -------------------------
 
@@ -71,17 +110,32 @@ async def check_membership(
     user_id = query.from_user.id
 
     try:
+
         member = await context.bot.get_chat_member(
             chat_id=CHANNEL,
             user_id=user_id
         )
 
-        if member.status in ["member", "administrator", "creator"]:
+        if member.status in [
+            "member",
+            "administrator",
+            "creator"
+        ]:
 
-            await query.message.reply_text(
-                "✅ عضویت تأیید شد!\n\n"
-                "🎮 حالا می‌توانیم فایل APK بازی را ارسال کنیم."
-            )
+            if APK_FILE_ID:
+
+                await query.message.reply_document(
+                    document=APK_FILE_ID,
+                    caption="🎮 بازی Long Drive\n\n"
+                            "عضویت شما تأیید شد ✅"
+                )
+
+            else:
+
+                await query.message.reply_text(
+                    "✅ عضویت شما تأیید شد!\n\n"
+                    "⚠️ فایل APK هنوز به ربات اضافه نشده."
+                )
 
         else:
 
@@ -107,7 +161,9 @@ async def check_membership(
 def main():
 
     if not TOKEN:
-        raise ValueError("BOT_TOKEN تنظیم نشده است.")
+        raise ValueError(
+            "BOT_TOKEN تنظیم نشده است."
+        )
 
     threading.Thread(
         target=run_web,
@@ -127,7 +183,17 @@ def main():
         )
     )
 
-    print("🤖 Long Drive Game Bot is running...")
+    # دریافت فایل‌های APK
+    app.add_handler(
+        MessageHandler(
+            filters.Document.ALL,
+            receive_apk
+        )
+    )
+
+    print(
+        "🤖 Long Drive Game Bot is running..."
+    )
 
     app.run_polling()
 
