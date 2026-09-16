@@ -2,40 +2,23 @@ import os
 import threading
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL = "@Game_Station_1"
-
-# بعداً File ID را اینجا در Render قرار می‌دهیم
 APK_FILE_ID = os.getenv("APK_FILE_ID")
 
 web = Flask(__name__)
-
 
 @web.route("/")
 def home():
     return "Long Drive Game Bot is running!"
 
-
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     web.run(host="0.0.0.0", port=port)
 
-
-# =========================
-# /start
-# =========================
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     keyboard = [
         [
             InlineKeyboardButton(
@@ -58,13 +41,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-
-# =========================
-# دریافت APK
-# =========================
-
 async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     document = update.message.document
 
     if not document:
@@ -73,7 +50,6 @@ async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     filename = document.file_name or ""
 
     if filename.lower().endswith(".apk"):
-
         file_id = document.file_id
 
         print("================================")
@@ -82,96 +58,63 @@ async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("FILE ID:", file_id)
         print("================================")
 
-        # File ID را داخل چت ربات به فرستنده نشان می‌دهد
         await update.message.reply_text(
             "✅ فایل APK دریافت شد!\n\n"
             "📁 نام فایل:\n"
-            f"{filename}\n\n"
+            + filename
+            + "\n\n"
             "🆔 File ID:\n"
-            f"{file_id}\n\n"
-            "⚠️ این File ID را در چت عمومی منتشر نکن."
+            + file_id
         )
 
     else:
-
         await update.message.reply_text(
             "❌ لطفاً فقط فایل APK ارسال کن."
         )
 
-
-# =========================
-# بررسی عضویت
-# =========================
-
-async def check_membership(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
-
+async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-
     await query.answer()
 
     user_id = query.from_user.id
 
     try:
-
         member = await context.bot.get_chat_member(
             chat_id=CHANNEL,
             user_id=user_id
         )
 
-        if member.status in [
-            "member",
-            "administrator",
-            "creator"
-        ]:
+        if member.status in ["member", "administrator", "creator"]:
 
             if APK_FILE_ID:
-
                 await query.message.reply_document(
                     document=APK_FILE_ID,
-                    caption=(
-                        "🎮 بازی Long Drive\n\n"
-                        "عضویت شما تأیید شد ✅"
-                    )
+                    caption="🎮 بازی Long Drive\n\nعضویت شما تأیید شد ✅"
                 )
-
             else:
-
                 await query.message.reply_text(
                     "✅ عضویت شما تأیید شد!\n\n"
                     "⚠️ فایل APK هنوز در ربات تنظیم نشده."
                 )
 
         else:
-
             await query.message.reply_text(
                 "❌ هنوز عضو کانال نیستی.\n\n"
                 "اول عضو کانال شو و دوباره بررسی کن."
             )
 
     except Exception as error:
-
         print("Membership error:", error)
 
         await query.message.reply_text(
-            "⚠️ خطا در بررسی عضویت.\n\n"
+            "⚠️ خطا در بررسی عضویت.\n"
             "مطمئن شو ربات در کانال ادمین است."
         )
-
-
-# =========================
-# اجرای ربات
-# =========================
 
 def main():
 
     if not TOKEN:
-
-        raise ValueError(
-            "BOT_TOKEN تنظیم نشده است."
-        )
+        raise ValueError("BOT_TOKEN تنظیم نشده است.")
 
     threading.Thread(
         target=run_web,
@@ -181,10 +124,7 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(
-        CommandHandler(
-            "start",
-            start
-        )
+        CommandHandler("start", start)
     )
 
     app.add_handler(
@@ -205,20 +145,5 @@ def main():
 
     app.run_polling()
 
-
 if __name__ == "__main__":
     main()
-
-بعد از قرار دادن کد:
-
-1. در GitHub فایل "bot.py" را باز کن.
-2. کل کد قبلی را پاک کن.
-3. این کد را کامل جایگزین کن.
-4. Commit changes بزن.
-5. Render خودش Deploy می‌کند.
-6. صبر کن Deploy تمام شود.
-7. برو داخل ربات و APK را دوباره به‌صورت File ارسال کن.
-8. ربات باید چیزی شبیه این جواب بدهد:
-   "🆔 File ID: ..."
-
-File ID را داخل چت برای من نفرست. فقط آن را کپی کن و بعد می‌ریم سراغ مرحله بعد: گذاشتنش در "APK_FILE_ID" در Render.
