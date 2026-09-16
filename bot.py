@@ -14,27 +14,25 @@ from telegram.ext import (
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL = "@Game_Station_1"
 
-# بعداً file_id فایل APK را اینجا از Environment Variable می‌گیریم
+# بعداً File ID را اینجا در Render قرار می‌دهیم
 APK_FILE_ID = os.getenv("APK_FILE_ID")
 
-# -------------------------
-# پورت Render
-# -------------------------
-
 web = Flask(__name__)
+
 
 @web.route("/")
 def home():
     return "Long Drive Game Bot is running!"
+
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     web.run(host="0.0.0.0", port=port)
 
 
-# -------------------------
+# =========================
 # /start
-# -------------------------
+# =========================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -61,9 +59,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# -------------------------
+# =========================
 # دریافت APK
-# -------------------------
+# =========================
 
 async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -78,26 +76,32 @@ async def receive_apk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         file_id = document.file_id
 
-        print("\n==============================")
+        print("================================")
         print("APK RECEIVED")
         print("FILE NAME:", filename)
         print("FILE ID:", file_id)
-        print("==============================\n")
+        print("================================")
 
+        # File ID را داخل چت ربات به فرستنده نشان می‌دهد
         await update.message.reply_text(
-            "✅ فایل APK دریافت شد.\n\n"
-            "File ID در Logs ربات نمایش داده شد."
+            "✅ فایل APK دریافت شد!\n\n"
+            "📁 نام فایل:\n"
+            f"{filename}\n\n"
+            "🆔 File ID:\n"
+            f"{file_id}\n\n"
+            "⚠️ این File ID را در چت عمومی منتشر نکن."
         )
 
     else:
+
         await update.message.reply_text(
             "❌ لطفاً فقط فایل APK ارسال کن."
         )
 
 
-# -------------------------
+# =========================
 # بررسی عضویت
-# -------------------------
+# =========================
 
 async def check_membership(
     update: Update,
@@ -105,6 +109,7 @@ async def check_membership(
 ):
 
     query = update.callback_query
+
     await query.answer()
 
     user_id = query.from_user.id
@@ -126,15 +131,17 @@ async def check_membership(
 
                 await query.message.reply_document(
                     document=APK_FILE_ID,
-                    caption="🎮 بازی Long Drive\n\n"
-                            "عضویت شما تأیید شد ✅"
+                    caption=(
+                        "🎮 بازی Long Drive\n\n"
+                        "عضویت شما تأیید شد ✅"
+                    )
                 )
 
             else:
 
                 await query.message.reply_text(
                     "✅ عضویت شما تأیید شد!\n\n"
-                    "⚠️ فایل APK هنوز به ربات اضافه نشده."
+                    "⚠️ فایل APK هنوز در ربات تنظیم نشده."
                 )
 
         else:
@@ -149,18 +156,19 @@ async def check_membership(
         print("Membership error:", error)
 
         await query.message.reply_text(
-            "⚠️ خطا در بررسی عضویت.\n"
+            "⚠️ خطا در بررسی عضویت.\n\n"
             "مطمئن شو ربات در کانال ادمین است."
         )
 
 
-# -------------------------
+# =========================
 # اجرای ربات
-# -------------------------
+# =========================
 
 def main():
 
     if not TOKEN:
+
         raise ValueError(
             "BOT_TOKEN تنظیم نشده است."
         )
@@ -173,7 +181,10 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(
-        CommandHandler("start", start)
+        CommandHandler(
+            "start",
+            start
+        )
     )
 
     app.add_handler(
@@ -183,7 +194,6 @@ def main():
         )
     )
 
-    # دریافت فایل‌های APK
     app.add_handler(
         MessageHandler(
             filters.Document.ALL,
@@ -191,12 +201,24 @@ def main():
         )
     )
 
-    print(
-        "🤖 Long Drive Game Bot is running..."
-    )
+    print("🤖 Long Drive Game Bot is running...")
 
     app.run_polling()
 
 
 if __name__ == "__main__":
     main()
+
+بعد از قرار دادن کد:
+
+1. در GitHub فایل "bot.py" را باز کن.
+2. کل کد قبلی را پاک کن.
+3. این کد را کامل جایگزین کن.
+4. Commit changes بزن.
+5. Render خودش Deploy می‌کند.
+6. صبر کن Deploy تمام شود.
+7. برو داخل ربات و APK را دوباره به‌صورت File ارسال کن.
+8. ربات باید چیزی شبیه این جواب بدهد:
+   "🆔 File ID: ..."
+
+File ID را داخل چت برای من نفرست. فقط آن را کپی کن و بعد می‌ریم سراغ مرحله بعد: گذاشتنش در "APK_FILE_ID" در Render.
